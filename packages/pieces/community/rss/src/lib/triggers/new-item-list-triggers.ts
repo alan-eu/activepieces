@@ -6,22 +6,24 @@ import {
 import {
   PieceAuthProperty,
   PiecePropValueSchema,
-  Store,
-  StoreScope,
   TriggerStrategy,
   createTrigger,
 } from '@activepieces/pieces-framework';
-import { rssFeedUrl } from '../common/props';
+import { rssFeedUrls } from '../common/props';
 import FeedParser from 'feedparser';
 import axios from 'axios';
 import { isNil } from '@activepieces/shared';
 import dayjs from 'dayjs';
 import { getId } from '../common/getId';
 
-export const rssNewItemTrigger = createTrigger({
-  name: 'new-item',
-  displayName: 'New Item In Feed',
-  description: 'Runs when a new item is added in the RSS feed',
+type PollingProps = {
+  rss_feed_urls: { url: string }[];
+};
+
+export const rssNewItemListTrigger = createTrigger({
+  name: 'new-item-list',
+  displayName: 'New Item In Feed List',
+  description: 'Runs when a new item is added in one of the RSS feed',
   type: TriggerStrategy.POLLING,
   sampleData: {
     title: 'AWS Cloud Quest: Container Services',
@@ -137,13 +139,13 @@ export const rssNewItemTrigger = createTrigger({
     },
   },
   props: {
-    rss_feed_url: rssFeedUrl,
+    rss_feed_urls: rssFeedUrls,
   },
   async test({ auth, propsValue, store, files }): Promise<unknown[]> {
     return await pollingHelper.test(polling, {
       auth,
       store: store,
-      propsValue: propsValue,
+      propsValue: propsValue as PollingProps,
       files: files,
     });
   },
@@ -151,7 +153,7 @@ export const rssNewItemTrigger = createTrigger({
     await pollingHelper.onEnable(polling, {
       auth,
       store: store,
-      propsValue: propsValue,
+      propsValue: propsValue as PollingProps,
     });
   },
 
@@ -163,7 +165,7 @@ export const rssNewItemTrigger = createTrigger({
     await pollingHelper.onDisable(polling, {
       auth,
       store: store,
-      propsValue: propsValue,
+      propsValue: propsValue as PollingProps,
     });
   },
 
@@ -173,7 +175,7 @@ export const rssNewItemTrigger = createTrigger({
       await pollingHelper.poll(polling, {
         auth,
         store: store,
-        propsValue: propsValue, 
+        propsValue: propsValue as PollingProps, 
         files: files,
       })
     ).filter((f) => {
@@ -223,56 +225,68 @@ export const rssNewItemTrigger = createTrigger({
   },
 });
 
-const polling: Polling<
-  PiecePropValueSchema<PieceAuthProperty>,
-  { rss_feed_url: string }
-> = {
-  strategy: DedupeStrategy.LAST_ITEM,
-  items: async ({
-    propsValue,
-  }: {
-    store: Store;
-    propsValue: { rss_feed_url: string };
-  }) => {
-    const items = await getRssItems(propsValue.rss_feed_url);
-    return items.map((item) => ({
-      id: getId(item),
-      data: item,
-    }));
+const polling: Polling<PiecePropValueSchema<PieceAuthProperty>, PollingProps> = {
+  strategy: DedupeStrategy.TIMEBASED,
+  items: async ({ propsValue }) => {
+    const urls = propsValue.rss_feed_urls.map(item => item.url);
+    const items = await getRssItems(urls);
+    console.log(items)
+    return items.map((item) => {
+      const pubDate = item.pubdate || item.pubDate;
+      return {
+        epochMilliSeconds: pubDate ? dayjs(pubDate).valueOf() : Date.now(),
+        data: {
+          ...item,
+          sourceFeedUrl: item.sourceFeedUrl
+        }
+      };
+    });
   },
 };
 
-function getRssItems(url: string): Promise<any[]> {
-  return new Promise((resolve, reject) => {
-    axios
-      .get(url, {
-        responseType: 'stream',
-      })
-      .then((response) => {
-        const feedparser = new FeedParser({
-          addmeta: true,
-        });
-        response.data.pipe(feedparser);
-        const items: any[] = [];
+function getRssItems(urls: string[]): Promise<any[]> {
+  const promises = urls.map(url => 
+    new Promise<any[]>((resolve, reject) => {
+      axios
+        .get(url, {
+          responseType: 'stream',
+        })
+        .then((response) => {
+          const feedparser = new FeedParser({
+            addmeta: true,
+          });
+          response.data.pipe(feedparser);
+          const items: any[] = [];
 
-        feedparser.on('readable', () => {
-          let item = feedparser.read();
-          while (item) {
-            items.push(item);
-            item = feedparser.read();
-          }
-        });
+          feedparser.on('readable', () => {
+            let item = feedparser.read();
+            while (item) {
+              items.push({
+                ...item,
+                sourceFeedUrl: url
+              });
+              item = feedparser.read();
+            }
+          });
 
-        feedparser.on('end', () => {
-          resolve(items);
-        });
+          feedparser.on('end', () => {
+            resolve(items);
+          });
 
-        feedparser.on('error', (error: any) => {
-          reject(error);
+          feedparser.on('error', (error: any) => {
+            reject(error);
+          });
+        })
+        .catch(() => {
+          resolve([]);
         });
-      })
-      .catch((error) => {
-        reject(error);
-      });
+    })
+  );
+
+  return Promise.all(promises).then(results => 
+    results.flat()
+  ).catch(error => {
+    console.error('Error processing feeds:', error);
+    return [];
   });
 }
