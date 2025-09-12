@@ -46,6 +46,7 @@ import { findUserByIdAction } from './lib/actions/find-user-by-id';
 import { newUserTrigger } from './lib/triggers/new-user';
 import { newSavedMessageTrigger } from './lib/triggers/new-saved-message';
 import { newTeamCustomEmojiTrigger } from './lib/triggers/new-team-custom-emoji';
+import { messageContainsKeywordTrigger } from './lib/triggers/message-contains-keyword';
 import { inviteUserToChannelAction } from './lib/actions/invite-user-to-channel';
 import { listUsers } from './lib/actions/list-users';
 import { deleteMessageAction } from './lib/actions/delete-message';
@@ -236,6 +237,7 @@ export const slack = createPiece({
     newUserTrigger,
     newSavedMessageTrigger,
     newTeamCustomEmojiTrigger,
+    messageContainsKeywordTrigger,
   ],
 });
 
