@@ -25,20 +25,14 @@ export const newMessageTrigger = createTrigger({
 		}),
 		matchWholeWord: Property.Checkbox({
 			displayName: 'Match Whole Word Only',
-			description: 'If enabled, only matches the keyword as a complete word (e.g. "test" won\'t match "testing"). Leave empty if no keyword.',
+			description: 'If enabled, only matches the keyword as a complete word (e.g. "test" won\'t match "testing").',
 			required: false,
 			defaultValue: false,
 		}),
 	},
 
 	type: TriggerStrategy.APP_WEBHOOK,
-	sampleData: {
-		text: 'Hello world!',
-		channel: 'C1234567890',
-		user: 'U1234567890',
-		channel_type: 'channel',
-		ts: '1234567890.123456'
-	},
+	sampleData: undefined,
 	onEnable: async (context) => {
 		// Older OAuth2 has team_id, newer has team.id
 		const teamId = context.auth.data['team_id'] ?? context.auth.data['team']['id'];
@@ -55,6 +49,11 @@ export const newMessageTrigger = createTrigger({
 		const payloadBody = context.payload.body as PayloadBody;
 		const {ignoreBots, keyword, includeThreads, matchWholeWord} = context.propsValue;
 
+		// ignore system messages (joins, leaves, file shares, etc.)
+		if (payloadBody.event.subtype) {
+			return [];
+		}
+	
 		if (ignoreBots && payloadBody.event.bot_id) {
 			return [];
 		}
@@ -64,11 +63,6 @@ export const newMessageTrigger = createTrigger({
 				return [];
 			}
 		}	
-
-		// if text is not provided, return
-		if (!payloadBody.event.text || !payloadBody.event.text.trim()) {
-			return [];
-		}
 
 		// if keyword is provided, check if the message contains the keyword
 		if (keyword && keyword.trim()) {
@@ -105,5 +99,6 @@ type PayloadBody = {
 		channel_type:string;
 		bot_id?: string;
 		thread_ts?: string;
+		subtype?: string;
 	};
 };
