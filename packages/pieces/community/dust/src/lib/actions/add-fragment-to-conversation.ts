@@ -1,11 +1,6 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
 import { dustAuth, DustAuthType } from '../..';
-import { DUST_BASE_URL } from '../common';
-import {
-  httpClient,
-  HttpMethod,
-  HttpRequest,
-} from '@activepieces/pieces-common';
+import { createClient } from '../common';
 import mime from 'mime-types';
 
 export const addFragmentToConversation = createAction({
@@ -27,33 +22,26 @@ export const addFragmentToConversation = createAction({
     }),
   },
   async run({ auth, propsValue }) {
+    const client = createClient(auth as DustAuthType);
+
     const mimeType = propsValue.fragmentName
       ? mime.lookup(propsValue.fragmentName) ||
         mime.lookup(propsValue.fragment.filename)
       : mime.lookup(propsValue.fragment.filename);
-
-    const dustAuth = auth as DustAuthType;
-
-    const request: HttpRequest = {
-      method: HttpMethod.POST,
-      url: `${DUST_BASE_URL[dustAuth.region || 'us']}/${
-        dustAuth.workspaceId
-      }/assistant/conversations/${propsValue.conversationId}/content_fragments`,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth.apiKey}`,
-      },
-      body: JSON.stringify(
-        {
-          content: propsValue.fragment.data.toString('utf-8'),
-          title: propsValue.fragmentName || propsValue.fragment.filename,
-          contentType: mimeType || 'text/plain',
-          context: null,
-          url: null,
-        },
-        (key, value) => (typeof value === 'undefined' ? null : value)
-      ),
+    const payload = {
+      content: propsValue.fragment.data.toString('utf-8'),
+      title: propsValue.fragmentName || propsValue.fragment.filename,
+      contentType: mimeType || 'text/plain',
+      context: null,
+      url: null,
     };
-    return (await httpClient.sendRequest(request)).body;
+
+    const response = await client.createContentFragment(payload);
+
+    if (response.isErr()) {
+      throw new Error(`API Error: ${response.error.message}`);
+    }
+
+    return response.value;
   },
 });
