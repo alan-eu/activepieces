@@ -1,13 +1,8 @@
 import { createAction, Property } from '@activepieces/pieces-framework';
-import {
-  httpClient,
-  HttpMethod,
-  HttpRequest,
-} from '@activepieces/pieces-common';
 import { dustAuth, DustAuthType } from '../..';
 import {
   assistantProp,
-  DUST_BASE_URL,
+  createClient,
   getConversationContent,
   timeoutProp,
   timezoneProp,
@@ -32,36 +27,33 @@ export const replyToConversation = createAction({
     timeout: timeoutProp,
   },
   async run({ auth, propsValue }) {
-    const dustAuth = auth as DustAuthType;
-    const request: HttpRequest = {
-      method: HttpMethod.POST,
-      url: `${DUST_BASE_URL[dustAuth.region || 'us']}/${
-        dustAuth.workspaceId
-      }/assistant/conversations/${propsValue.conversationId}/messages`,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth.apiKey}`,
-      },
-      body: JSON.stringify(
-        {
-          content: propsValue.query,
-          mentions: [{ configurationId: propsValue.assistant }],
-          context: {
-            timezone: propsValue.timezone,
-            username: propsValue.username,
-            email: null,
-            fullName: null,
-            profilePictureUrl: null,
-          },
+    const client = createClient(auth as DustAuthType);
+
+    const payload = {
+      conversationId: propsValue.conversationId,
+      message: {
+        content: propsValue.query,
+        mentions: [{ configurationId: propsValue.assistant }],
+        context: {
+          timezone: propsValue.timezone,
+          username: propsValue.username,
+          email: null,
+          fullName: null,
+          profilePictureUrl: null,
         },
-        (key, value) => (typeof value === 'undefined' ? null : value)
-      ),
+      },
     };
-    await httpClient.sendRequest(request);
+
+    const response = await client.postUserMessage(payload);
+
+    if (response.isErr()) {
+      throw new Error(`API Error: ${response.error.message}`);
+    }
+
     return await getConversationContent(
       propsValue.conversationId,
       propsValue.timeout,
-      dustAuth
+      auth as DustAuthType
     );
   },
 });
