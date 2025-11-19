@@ -1,8 +1,6 @@
 import { Property } from '@activepieces/pieces-framework';
 import {
-  httpClient,
   HttpMessageBody,
-  HttpMethod,
 } from '@activepieces/pieces-common';
 import { DustAuthType } from '..';
 import { DustAPI } from '@dust-tt/client';
@@ -80,16 +78,15 @@ export async function getConversationContent(
   auth: DustAuthType
 ) {
   const getConversation = async (conversationId: string) => {
-    return httpClient.sendRequest({
-      method: HttpMethod.GET,
-      url: `${DUST_BASE_URL[auth.region || 'us']}/${
-        auth.workspaceId
-      }/assistant/conversations/${conversationId}`,
-      headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${auth.apiKey}`,
-      },
-    });
+    const client = createClient(auth as DustAuthType);
+
+    const response = await client.getConversation({ conversationId: conversationId });
+
+    if (response.isErr()) {
+      throw new Error(`API Error: ${response.error.message}`);
+    }
+
+    return response.value;
   };
 
   let conversation = await getConversation(conversationId);
