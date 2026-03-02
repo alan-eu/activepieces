@@ -62,6 +62,7 @@ export const intercom = createPiece({
 		'khaledmashaly',
 		'abuaboud',
 		'AdamSelene',
+		'HeleneGaspar',
 	],
 	actions: [
 		addNoteToUserAction,
