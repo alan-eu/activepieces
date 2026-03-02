@@ -46,7 +46,6 @@ import { newUserTrigger } from './lib/triggers/new-user';
 import { tagAddedToUserTrigger } from './lib/triggers/tag-added-to-user';
 import { contactUpdatedTrigger } from './lib/triggers/contact-updated';
 import { intercomAuth } from './lib/auth';
-import { assignConversationAction } from './lib/actions/assign-conversation-to-admin';
 
 export const intercom = createPiece({
 	displayName: 'Intercom',
@@ -62,7 +61,6 @@ export const intercom = createPiece({
 		'khaledmashaly',
 		'abuaboud',
 		'AdamSelene',
-		'HeleneGaspar',
 	],
 	actions: [
 		addNoteToUserAction,
@@ -70,7 +68,6 @@ export const intercom = createPiece({
 		addOrRemoveTagOnContactAction,
 		addOrRemoveTagOnCompanyAction,
 		addOrRemoveTagOnConversationAction,
-		assignConversationAction,
 		createArticleAction,
 		createConversationAction,
 		createTicketAction,
