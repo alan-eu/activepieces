@@ -872,6 +872,9 @@
       "@activepieces/piece-qdrant": [
         "packages/pieces/community/qdrant/src/index.ts"
       ],
+      "@activepieces/piece-qonto": [
+        "packages/pieces/community/qonto/src/index.ts"
+      ],
       "@activepieces/piece-qrcode": [
         "packages/pieces/core/qrcode/src/index.ts"
       ],
