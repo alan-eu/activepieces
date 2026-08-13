@@ -9,15 +9,12 @@ import { zernioAuth } from '../auth';
 const BASE_URL = 'https://zernio.com/api/v1';
 
 async function listAccounts(apiKey: string): Promise<ZernioAccount[]> {
-    const response = await httpClient.sendRequest<
-        { accounts?: ZernioAccount[] } | ZernioAccount[]
-    >({
+    const response = await httpClient.sendRequest<{ accounts?: ZernioAccount[] }>({
         method: HttpMethod.GET,
         url: `${BASE_URL}/accounts`,
         authentication: { type: AuthenticationType.BEARER_TOKEN, token: apiKey },
     });
-    const body = response.body;
-    return Array.isArray(body) ? body : body.accounts ?? [];
+    return response.body.accounts ?? [];
 }
 
 const accountsProperty = Property.MultiSelectDropdown({
@@ -39,7 +36,7 @@ const accountsProperty = Property.MultiSelectDropdown({
             disabled: false,
             options: accounts.map((account) => ({
                 label: `${account.platform}: ${
-                    account.name ?? account.username ?? account._id
+                    account.displayName ?? account.username ?? account._id
                 }`,
                 value: { platform: account.platform, accountId: account._id },
             })),
@@ -52,6 +49,6 @@ export const zernioCommon = { BASE_URL, accountsProperty };
 type ZernioAccount = {
     _id: string;
     platform: string;
-    name?: string;
     username?: string;
+    displayName?: string;
 };

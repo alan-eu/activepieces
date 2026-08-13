@@ -34,19 +34,19 @@ export const createPost = createAction({
         scheduledFor: Property.DateTime({
             displayName: 'Scheduled For',
             description:
-                'When to publish, in ISO 8601 format (e.g. 2026-04-17T10:30:00Z). Ignored when Publish Now is enabled.',
-            required: false,
-        }),
-        timezone: Property.ShortText({
-            displayName: 'Timezone',
-            description:
-                'IANA timezone for the scheduled time (e.g. America/New_York). Defaults to UTC.',
+                'When to publish, as a UTC time (e.g. 2026-04-17T10:30:00Z). Ignored when Publish Now is enabled.',
             required: false,
         }),
     },
     async run(context) {
-        const { content, accounts, publishNow, scheduledFor, timezone } =
+        const { content, accounts, publishNow, scheduledFor } =
             context.propsValue;
+
+        if (!publishNow && !scheduledFor) {
+            throw new Error(
+                'Enable Publish Now or set a Scheduled For time — otherwise the post is only saved as a draft.'
+            );
+        }
 
         const response = await httpClient.sendRequest({
             method: HttpMethod.POST,
@@ -58,10 +58,9 @@ export const createPost = createAction({
             body: {
                 content,
                 platforms: accounts,
-                ...(publishNow ? { publishNow: true } : {}),
-                ...(!publishNow && scheduledFor
-                    ? { scheduledFor, timezone: timezone ?? 'UTC' }
-                    : {}),
+                ...(publishNow
+                    ? { publishNow: true }
+                    : { scheduledFor, timezone: 'UTC' }),
             },
         });
         return response.body;

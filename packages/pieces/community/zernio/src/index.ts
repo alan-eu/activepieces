@@ -1,6 +1,5 @@
 import { createCustomApiCallAction } from '@activepieces/pieces-common';
-import { createPiece } from '@activepieces/pieces-framework';
-import { PieceCategory } from '@activepieces/shared';
+import { createPiece, PieceCategory } from '@activepieces/pieces-framework';
 import { createPost } from './lib/actions/create-post';
 import { sendSms } from './lib/actions/send-sms';
 import { zernioAuth } from './lib/auth';
@@ -14,7 +13,7 @@ export const zernio = createPiece({
     logoUrl: 'https://cdn.activepieces.com/pieces/zernio.png',
     categories: [PieceCategory.MARKETING, PieceCategory.COMMUNICATION],
     auth: zernioAuth,
-    authors: ['olivier-sambourg'],
+    authors: ['AdamSelene'],
     actions: [
         createPost,
         sendSms,
