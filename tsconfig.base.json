@@ -1529,6 +1529,9 @@
       "@activepieces/piece-zendesk": [
         "packages/pieces/community/zendesk/src/index.ts"
       ],
+      "@activepieces/piece-zernio": [
+        "packages/pieces/community/zernio/src/index.ts"
+      ],
       "@activepieces/piece-zerobounce": [
         "packages/pieces/community/zerobounce/src/index.ts"
       ],
