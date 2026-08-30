@@ -1,9 +1,9 @@
 import { HttpMethod } from '@activepieces/pieces-common';
 import { createAction, Property } from '@activepieces/pieces-framework';
 import { kandjiAuth } from '../auth';
-import { kandjiApi } from '../common/client';
+import { kandjiApi, KandjiCredentials } from '../common/client';
 import { kandjiProps } from '../common/props';
-import { KandjiLockResponse } from '../common/types';
+import { KandjiLockResponse, KandjiUnlockPinResponse } from '../common/types';
 
 export const lockDeviceAction = createAction({
   auth: kandjiAuth,
@@ -15,7 +15,7 @@ export const lockDeviceAction = createAction({
   audience: 'both',
   aiMetadata: {
     description:
-      'Sends the MDM Lock Device command to one device and returns the six-digit unlock PIN for a Mac. Use it when a device is lost, stolen or being offboarded; it locks the device immediately and the user cannot get back in without the PIN, so store the PIN from the output. Not idempotent in effect: a Mac locked a second time gets a new PIN, which invalidates the previous one. The command reaches the device on its next MDM check-in.',
+      'Sends the MDM Lock Device command to one device and returns the six-digit unlock PIN of a Mac once Kandji has one. Use it when a device is lost, stolen or being offboarded; the user cannot get back in without the PIN, so store it from the output. Not idempotent in effect: a Mac locked a second time gets a new PIN, which invalidates the previous one. The command only reaches the device on its next MDM check-in, and the PIN comes back null until then, on iPhone and iPad, which lock with the existing passcode, and on Apple silicon Macs before macOS 11.5, which have no lock PIN.',
     idempotent: false,
   },
   props: {
@@ -53,8 +53,28 @@ export const lockDeviceAction = createAction({
 
     return {
       device_id,
-      // Only macOS returns a PIN; iOS and iPadOS lock with the existing passcode.
-      unlock_pin: response?.PIN ?? null,
+      unlock_pin:
+        response?.PIN ?? (await readUnlockPin(context.auth.props, device_id)),
     };
   },
 });
+
+// The lock response carries the PIN of a Mac, but Kandji also generates it when
+// the device receives the command, and the device record is then the only place
+// holding it. Neither source has one for a device that locks with its existing
+// passcode, so a missing PIN is a valid outcome rather than a failure.
+async function readUnlockPin(
+  auth: KandjiCredentials,
+  deviceId: string
+): Promise<string | null> {
+  try {
+    const secret = await kandjiApi.call<KandjiUnlockPinResponse>({
+      auth,
+      method: HttpMethod.GET,
+      resourceUri: `/devices/${deviceId}/secrets/unlockpin`,
+    });
+    return secret?.pin ?? null;
+  } catch (e) {
+    return null;
+  }
+}

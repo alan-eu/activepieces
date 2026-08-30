@@ -166,6 +166,10 @@ export type KandjiLockResponse = {
   PIN?: string | null;
 };
 
+export type KandjiUnlockPinResponse = {
+  pin?: string | null;
+};
+
 export type KandjiAuditEvent = {
   id: string;
   occurred_at?: string | null;
