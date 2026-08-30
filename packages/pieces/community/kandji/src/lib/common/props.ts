@@ -173,9 +173,82 @@ const platform = Property.StaticDropdown({
   },
 });
 
+// Kandji documents this list as open-ended and still growing, so the dropdown
+// offers the types the tenant has actually logged as well as these.
+const KNOWN_AUDIT_TARGET_TYPES = [
+  'device',
+  'blueprint',
+  'library_item',
+  'user',
+  'admin',
+  'api_token',
+  'threat',
+  'vulnerability',
+];
+
+function auditTargetTypeLabel(targetType: string): string {
+  return targetType
+    .split('_')
+    .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
+    .join(' ');
+}
+
+const auditTargetTypes = Property.MultiSelectDropdown({
+  displayName: 'Object Types',
+  description:
+    'Only trigger on events about these kinds of object. Leave empty for every event.',
+  auth: kandjiAuth,
+  required: false,
+  refreshers: [],
+  options: async ({ auth }) => {
+    if (!auth) {
+      return {
+        disabled: true,
+        options: [],
+        placeholder: 'Please connect your Kandji account first.',
+      };
+    }
+    const targetTypes = new Set(KNOWN_AUDIT_TARGET_TYPES);
+    try {
+      const events = await kandjiApi.listAuditEvents({ auth: auth.props });
+      for (const event of events) {
+        if (event.target_type) {
+          targetTypes.add(event.target_type);
+        }
+      }
+    } catch (e) {
+      // The token may not carry the audit permission yet; the documented types
+      // are still worth offering.
+    }
+    return {
+      disabled: false,
+      options: [...targetTypes].sort().map((targetType) => ({
+        label: auditTargetTypeLabel(targetType),
+        value: targetType,
+      })),
+    };
+  },
+});
+
+const auditActions = Property.StaticMultiSelectDropdown({
+  displayName: 'Actions',
+  description:
+    'Only trigger on these kinds of change. Leave empty for every event.',
+  required: false,
+  options: {
+    options: [
+      { label: 'Created', value: 'create' },
+      { label: 'Updated', value: 'update' },
+      { label: 'Deleted', value: 'delete' },
+    ],
+  },
+});
+
 export const kandjiProps = {
   deviceId,
   blueprintId,
   assignedUserId,
   platform,
+  auditTargetTypes,
+  auditActions,
 };

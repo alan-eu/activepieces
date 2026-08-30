@@ -1,5 +1,6 @@
 import {
   KandjiApp,
+  KandjiAuditEvent,
   KandjiDevice,
   KandjiDeviceDetails,
   KandjiUserRef,
@@ -121,6 +122,26 @@ function asUserRef(
   value: KandjiUserRef | string | null | undefined
 ): KandjiUserRef | undefined {
   return typeof value === 'object' && value !== null ? value : undefined;
+}
+
+export function toFlatAuditEvent(event: KandjiAuditEvent) {
+  return {
+    id: event.id,
+    // Kandji names no single event type: what happened is the object plus the
+    // change, so the pair is joined once here instead of in every flow.
+    event_type: `${event.target_type ?? 'unknown'}.${event.action ?? 'unknown'}`,
+    occurred_at: event.occurred_at ?? null,
+    action: event.action ?? null,
+    actor_id: event.actor_id ?? null,
+    actor_type: event.actor_type ?? null,
+    target_id: event.target_id ?? null,
+    target_type: event.target_type ?? null,
+    target_component: event.target_component ?? null,
+    // Every event type carries its own shape here, so these stay nested; flat
+    // keys would differ from one event to the next.
+    new_state: event.new_state ?? null,
+    metadata: event.metadata ?? null,
+  };
 }
 
 // /devices/{id}/details reports these flags as the strings 'True' and 'False'

@@ -7,6 +7,8 @@ import {
   QueryParams,
 } from '@activepieces/pieces-common';
 import {
+  KandjiAuditEvent,
+  KandjiAuditEventPage,
   KandjiBlueprint,
   KandjiBlueprintPage,
   KandjiDevice,
@@ -17,6 +19,12 @@ import {
 const API_PATH = '/api/v1';
 // Kandji caps every list endpoint at 300 records per request.
 const MAX_PAGE_SIZE = 300;
+// Except the audit feed, which allows 500.
+const MAX_AUDIT_PAGE_SIZE = 500;
+// A poll asks for the events of the last few minutes and gets one short page.
+// The cap only matters on the very first poll of a trigger, where no start date
+// bounds the request and the feed still holds a year of history.
+const MAX_AUDIT_PAGES = 4;
 // Users are cursor-paginated with no server-side "contains" search, so the
 // dropdown walks a bounded number of pages instead of the whole directory.
 const MAX_USER_PAGES = 4;
@@ -156,6 +164,38 @@ function nextCursor(next: string | null | undefined): string | undefined {
   }
 }
 
+async function listAuditEvents({
+  auth,
+  since,
+}: {
+  auth: KandjiCredentials;
+  since?: number;
+}): Promise<KandjiAuditEvent[]> {
+  const events: KandjiAuditEvent[] = [];
+  let cursor: string | undefined = undefined;
+
+  for (let page = 0; page < MAX_AUDIT_PAGES; page++) {
+    const response: KandjiAuditEventPage = await apiCall<KandjiAuditEventPage>({
+      auth,
+      method: HttpMethod.GET,
+      resourceUri: '/audit/events',
+      query: {
+        limit: MAX_AUDIT_PAGE_SIZE,
+        sort_by: '-occurred_at',
+        start_date: since ? new Date(since).toISOString() : undefined,
+        cursor,
+      },
+    });
+    events.push(...(response.results ?? []));
+    cursor = nextCursor(response.next);
+    if (!cursor) {
+      break;
+    }
+  }
+
+  return events;
+}
+
 export const kandjiApi = {
   baseUrl,
   maxPageSize: MAX_PAGE_SIZE,
@@ -163,4 +203,5 @@ export const kandjiApi = {
   listDevices,
   listBlueprints,
   listUsers,
+  listAuditEvents,
 };

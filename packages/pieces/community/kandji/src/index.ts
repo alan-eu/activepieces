@@ -9,6 +9,7 @@ import { lockDeviceAction } from './lib/actions/lock-device';
 import { updateDeviceAction } from './lib/actions/update-device';
 import { updateDeviceInventoryAction } from './lib/actions/update-device-inventory';
 import { kandjiApi } from './lib/common/client';
+import { newActivityEventTrigger } from './lib/triggers/new-activity-event';
 
 export const kandji = createPiece({
   displayName: 'Kandji (Iru)',
@@ -38,5 +39,5 @@ export const kandji = createPiece({
       }),
     }),
   ],
-  triggers: [],
+  triggers: [newActivityEventTrigger],
 });

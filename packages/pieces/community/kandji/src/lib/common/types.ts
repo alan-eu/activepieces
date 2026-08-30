@@ -165,3 +165,23 @@ export type KandjiNote = {
 export type KandjiLockResponse = {
   PIN?: string | null;
 };
+
+export type KandjiAuditEvent = {
+  id: string;
+  occurred_at?: string | null;
+  action?: string | null;
+  actor_id?: string | null;
+  actor_type?: string | null;
+  target_id?: string | null;
+  target_type?: string | null;
+  target_component?: string | null;
+  // Shaped per event type, so it is passed through untouched.
+  new_state?: Record<string, unknown> | null;
+  metadata?: Record<string, unknown> | null;
+};
+
+export type KandjiAuditEventPage = {
+  next?: string | null;
+  previous?: string | null;
+  results?: KandjiAuditEvent[] | null;
+};
