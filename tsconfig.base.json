@@ -703,6 +703,9 @@
       "@activepieces/piece-kallabot-ai": [
         "packages/pieces/community/kallabot-ai/src/index.ts"
       ],
+      "@activepieces/piece-kandji": [
+        "packages/pieces/community/kandji/src/index.ts"
+      ],
       "@activepieces/piece-kimai": [
         "packages/pieces/community/kimai/src/index.ts"
       ],
