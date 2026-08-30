@@ -112,16 +112,14 @@ async function listDevices({
 
 async function listBlueprints({
   auth,
-  name,
 }: {
   auth: KandjiCredentials;
-  name?: string;
 }): Promise<KandjiBlueprint[]> {
   const page = await apiCall<KandjiBlueprintPage>({
     auth,
     method: HttpMethod.GET,
     resourceUri: '/blueprints',
-    query: { name, limit: MAX_PAGE_SIZE },
+    query: { limit: MAX_PAGE_SIZE },
   });
   return page.results ?? [];
 }

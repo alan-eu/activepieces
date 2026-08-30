@@ -70,10 +70,10 @@ export function toFlatDeviceDetails(details: KandjiDeviceDetails) {
     first_enrollment: general.first_enrollment ?? null,
     last_enrollment: general.last_enrollment ?? null,
     time_since_boot: general.time_since_boot ?? null,
-    mdm_enabled: mdm.mdm_enabled ?? null,
-    mdm_supervised: mdm.supervised ?? null,
+    mdm_enabled: toBoolean(mdm.mdm_enabled),
+    mdm_supervised: toBoolean(mdm.supervised),
     mdm_last_check_in: mdm.last_check_in ?? null,
-    agent_installed: agent.agent_installed ?? null,
+    agent_installed: toBoolean(agent.agent_installed),
     agent_version: agent.agent_version ?? null,
     agent_last_check_in: agent.last_check_in ?? null,
     filevault_enabled: filevault.filevault_enabled ?? null,
@@ -121,4 +121,17 @@ function asUserRef(
   value: KandjiUserRef | string | null | undefined
 ): KandjiUserRef | undefined {
   return typeof value === 'object' && value !== null ? value : undefined;
+}
+
+// /devices/{id}/details reports these flags as the strings 'True' and 'False'
+// where /devices returns real booleans; the flat records must agree so the same
+// column keeps one type across actions.
+function toBoolean(value: string | boolean | null | undefined): boolean | null {
+  if (typeof value === 'boolean') {
+    return value;
+  }
+  if (typeof value === 'string' && value.length > 0) {
+    return value.toLowerCase() === 'true';
+  }
+  return null;
 }
