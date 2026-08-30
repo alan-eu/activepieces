@@ -210,15 +210,18 @@ const auditTargetTypes = Property.MultiSelectDropdown({
     }
     const targetTypes = new Set(KNOWN_AUDIT_TARGET_TYPES);
     try {
-      const events = await kandjiApi.listAuditEvents({ auth: auth.props });
+      const events = await kandjiApi.listAuditEvents({
+        auth: auth.props,
+        maxPages: 1,
+      });
       for (const event of events) {
         if (event.target_type) {
           targetTypes.add(event.target_type);
         }
       }
     } catch (e) {
-      // The token may not carry the audit permission yet; the documented types
-      // are still worth offering.
+      // The documented types are worth offering whatever went wrong, not least
+      // when the token has yet to be granted the audit permission.
     }
     return {
       disabled: false,

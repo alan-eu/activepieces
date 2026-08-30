@@ -21,9 +21,9 @@ const API_PATH = '/api/v1';
 const MAX_PAGE_SIZE = 300;
 // Except the audit feed, which allows 500.
 const MAX_AUDIT_PAGE_SIZE = 500;
-// A poll asks for the events of the last few minutes and gets one short page.
-// The cap only matters on the very first poll of a trigger, where no start date
-// bounds the request and the feed still holds a year of history.
+// A poll asks for the events since the last one and gets a single short page.
+// The cap bounds the exceptions: a burst of thousands of events, and the
+// unbounded reads that have no start date to narrow them.
 const MAX_AUDIT_PAGES = 4;
 // Users are cursor-paginated with no server-side "contains" search, so the
 // dropdown walks a bounded number of pages instead of the whole directory.
@@ -167,21 +167,29 @@ function nextCursor(next: string | null | undefined): string | undefined {
 async function listAuditEvents({
   auth,
   since,
+  maxPages = MAX_AUDIT_PAGES,
 }: {
   auth: KandjiCredentials;
   since?: number;
+  maxPages?: number;
 }): Promise<KandjiAuditEvent[]> {
   const events: KandjiAuditEvent[] = [];
   let cursor: string | undefined = undefined;
 
-  for (let page = 0; page < MAX_AUDIT_PAGES; page++) {
+  for (let page = 0; page < maxPages; page++) {
     const response: KandjiAuditEventPage = await apiCall<KandjiAuditEventPage>({
       auth,
       method: HttpMethod.GET,
       resourceUri: '/audit/events',
       query: {
         limit: MAX_AUDIT_PAGE_SIZE,
-        sort_by: '-occurred_at',
+        // Oldest first from the start date, so that a burst longer than the
+        // page budget is only delayed: every event left unread is newer than
+        // the newest one returned, which is where a caller tracking the newest
+        // event it has seen resumes. Newest first would move that mark past
+        // them and lose them. With no start date nothing bounds the walk and
+        // the caller only wants a recent sample, so read newest first.
+        sort_by: since ? 'occurred_at' : '-occurred_at',
         start_date: since ? new Date(since).toISOString() : undefined,
         cursor,
       },
