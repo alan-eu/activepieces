@@ -4722,6 +4722,19 @@
         "tslib": "2.6.2",
       },
     },
+    "packages/pieces/community/kandji": {
+      "name": "@activepieces/piece-kandji",
+      "version": "0.0.1",
+      "dependencies": {
+        "@activepieces/core-piece-types": "workspace:*",
+        "@activepieces/core-utils": "workspace:*",
+        "@activepieces/pieces-common": "workspace:*",
+        "@activepieces/pieces-framework": "workspace:*",
+      },
+      "devDependencies": {
+        "tslib": "2.6.2",
+      },
+    },
     "packages/pieces/community/kapso": {
       "name": "@activepieces/piece-kapso",
       "version": "0.1.5",
@@ -11767,6 +11780,8 @@
     "@activepieces/piece-just-invoice": ["@activepieces/piece-just-invoice@workspace:packages/pieces/community/just-invoice"],
 
     "@activepieces/piece-kallabot-ai": ["@activepieces/piece-kallabot-ai@workspace:packages/pieces/community/kallabot-ai"],
+
+    "@activepieces/piece-kandji": ["@activepieces/piece-kandji@workspace:packages/pieces/community/kandji"],
 
     "@activepieces/piece-kapso": ["@activepieces/piece-kapso@workspace:packages/pieces/community/kapso"],
 
