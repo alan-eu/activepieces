@@ -14,7 +14,10 @@
 import * as fs from 'fs';
 import * as path from 'path';
 
-const PIECES_DIR = path.resolve(__dirname, '../../../../packages/pieces/community');
+const PIECES_DIRS = [
+  path.resolve(__dirname, '../../../../packages/pieces/community'),
+  path.resolve(__dirname, '../../../../packages/pieces/core'),
+];
 const ALAN_AUTOMATION_DIR = path.resolve(__dirname, '../../../../..', 'alan-automation');
 const OUTPUT_FILE = path.resolve(__dirname, '../references/piece-catalog.md');
 
@@ -326,7 +329,7 @@ Use this to determine valid \`pieceName\`, \`triggerName\`/\`actionName\`, and \
 async function main() {
   const filterByLibrary = process.argv.includes('--filter-by-library');
 
-  console.log('Scanning pieces directory:', PIECES_DIR);
+  console.log('Scanning pieces directories:', PIECES_DIRS.join(', '));
 
   let libraryPieces: Set<string> | null = null;
   if (filterByLibrary) {
@@ -338,9 +341,11 @@ async function main() {
     }
   }
 
-  const pieceDirs = fs.readdirSync(PIECES_DIR, { withFileTypes: true })
-    .filter(d => d.isDirectory())
-    .map(d => path.join(PIECES_DIR, d.name));
+  const pieceDirs = PIECES_DIRS
+    .filter(dir => fs.existsSync(dir))
+    .flatMap(dir => fs.readdirSync(dir, { withFileTypes: true })
+      .filter(d => d.isDirectory())
+      .map(d => path.join(dir, d.name)));
 
   console.log(`Found ${pieceDirs.length} piece directories`);
 

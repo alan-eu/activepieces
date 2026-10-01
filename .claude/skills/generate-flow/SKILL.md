@@ -75,7 +75,7 @@ Build the flow JSON following these rules:
 - Use `{"type": "DYNAMIC"}` for values that depend on other selections (e.g., channel depends on auth)
 
 #### Piece Versions
-- Read the actual current version from each piece's `package.json` at `packages/pieces/community/<piece-name>/package.json` — the piece catalog may be outdated
+- Read the actual current version from each piece's `package.json` at `packages/pieces/community/<piece-name>/package.json`, falling back to `packages/pieces/core/<piece-name>/package.json` for core pieces (`webhook`, `schedule`, `http`, `forms`, `store`, ...) — the piece catalog may be outdated
 - Use tilde prefix: `"~X.Y.Z"`
 - If the piece directory is not found, use `"~0.0.1"` as a placeholder
 
